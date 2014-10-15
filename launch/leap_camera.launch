@@ -1,0 +1,5 @@
+<launch>
+  <group ns="leap_motion">
+      <node pkg="leap_motion" type="leap_sender" name="leap_sender" />
+  </group>
+</launch>
