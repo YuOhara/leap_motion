@@ -15,6 +15,13 @@
 #include "leap_motion/camera_info_manager.h"
 #include <sstream>
 
+#define targetWidth 500
+#define targetHeight 500
+#define cutWidth 280
+#define cutHeight 220
+#define startX 110
+#define startY 140
+
 using namespace Leap;
 using namespace std;
 
@@ -49,8 +56,8 @@ void SampleListener::onInit(const Controller& controller) {
   _pub_info_right = _node.advertise<sensor_msgs::CameraInfo>("right/camera_info", 1);
   seq = 0;// camera_num=0;
   // float D[5] = {0, 0, 0, 0, 0};
-  info_mgr_left = new camera_info_manager::CameraInfoManager(_node, "leap_motion", "", "left/set_camera_info");
-  info_mgr_right = new camera_info_manager::CameraInfoManager(_node, "leap_motion", "", "right/set_camera_info");
+  info_mgr_left = new camera_info_manager::CameraInfoManager(_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_left.yml", "left/set_camera_info");
+  info_mgr_right = new camera_info_manager::CameraInfoManager(_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_right.yml", "right/set_camera_info");
   // info_msg_right.distortion_model = "plumb_bob";
   // info_msg_right.D.resize(5);
   // info_msg_right.D.assign(D, D+5);
@@ -87,30 +94,28 @@ void SampleListener::onFrame(const Controller& controller) {
   image_msg.is_bigendian = 0;
   for(int camera_num=0; camera_num<2; camera_num++){
     Image image = images[camera_num];
-    int targetWidth = 400;
-    int targetHeight = 400;
-    image_msg.width =  targetWidth;
-    image_msg.height = targetHeight;
-    image_msg.step = targetWidth;
-    image_msg.data.resize(image_msg.step * image_msg.height);
+    image_msg.width =  cutWidth;
+    image_msg.height = cutHeight;
+    image_msg.step = cutWidth;
+    image_msg.data.resize(cutWidth*cutHeight);
 #pragma omp parallel for
-    for(int i=0; i<targetWidth; i++){
-      for(int j=0; j<targetHeight; j++){
-	Vector input = Vector((float)i/targetWidth, (float)j/targetHeight, 0);
+    for(int i=0; i<cutWidth; i++){
+      for(int j=0; j<cutHeight; j++){
+	Vector input = Vector((float)(i+startX)/targetWidth, (float)(j+startY)/targetHeight, 0);
 	input.x = (input.x - image.rayOffsetX()) / image.rayScaleX();
 	input.y = (input.y - image.rayOffsetY()) / image.rayScaleY();
 	Vector pixel = image.warp(input);
 	if(pixel.x >= 0 && pixel.x < image.width() && pixel.y >= 0 && pixel.y < image.height()) {
 	  int data_index = floor(pixel.y) * image.width() + floor(pixel.x);
-	  image_msg.data[targetWidth*j+i] = image.data()[data_index];
+	  image_msg.data[cutWidth*j+i] = image.data()[data_index];
 	} else {
-	  image_msg.data[targetWidth*j+i] = 255;
+	  image_msg.data[cutWidth*j+i] = 0;
 	}
       }
     }
     if(camera_num==0){
       sensor_msgs::CameraInfoPtr info_msg(new sensor_msgs::CameraInfo(info_mgr_left->getCameraInfo()));
-      image_msg.header.frame_id = info_msg->header.frame_id ="leap_l";
+      image_msg.header.frame_id = info_msg->header.frame_id ="leap_optical_frame";
       info_msg->width = image_msg.width;
       info_msg->height = image_msg.height;
       info_msg->header.stamp = image_msg.header.stamp;
@@ -119,7 +124,7 @@ void SampleListener::onFrame(const Controller& controller) {
       _pub_info_left.publish(*info_msg);
     }else{
       sensor_msgs::CameraInfoPtr info_msg(new sensor_msgs::CameraInfo(info_mgr_right->getCameraInfo()));
-      image_msg.header.frame_id = info_msg->header.frame_id = "leap_r";
+      image_msg.header.frame_id = info_msg->header.frame_id = "leap_optical_frame";
       info_msg->width = image_msg.width;
       info_msg->height = image_msg.height;
       info_msg->header.stamp = image_msg.header.stamp;
