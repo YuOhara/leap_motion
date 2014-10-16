@@ -1,5 +1,6 @@
 <launch>
   <node pkg="camera_calibration" type="cameracalibrator.py" name="camera_calib" 
-	args="--size 6x5 --square 0.030 right:=/leap_motion/right/image_raw left:=/leap_motion/left/image_raw right_camera:=/leap_motion/right left_camera:=/leap_motion/left" />
+	args="--size 6x5 --square 0.03 right:=/leap_motion/right/image_raw left:=/leap_motion/left/image_raw right_camera:=/leap_motion/right left_camera:=/leap_motion/left" 
+	output="screen"/>
 
 </launch>
