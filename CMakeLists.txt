@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(leap_motion)
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy roslib std_msgs geometry_msgs message_generation sensor_msgs # camera_info_manager
+find_package(catkin REQUIRED COMPONENTS roscpp rospy roslib std_msgs geometry_msgs message_generation sensor_msgs visualization_msgs# camera_info_manager
   camera_calibration_parsers)
 
 find_package(OpenMP)
@@ -20,6 +20,8 @@ generate_messages(
    DEPENDENCIES
    std_msgs
    geometry_msgs
+   sensor_msgs
+   visualization_msgs
 )
 
 catkin_package(
@@ -39,8 +41,14 @@ install(PROGRAMS
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-add_executable(leap_sender src/leap_sender.cpp src/camera_info_manager.cpp)
+add_executable(leap_camera src/leap_camera.cpp src/camera_info_manager.cpp)
  
-target_link_libraries(leap_sender
+target_link_libraries(leap_camera
+  ${catkin_LIBRARIES} /home/ohara/LeapDeveloperKit_2.1.4+22333_linux/LeapSDK/lib/x64/libLeap.so
+  )
+
+add_executable(leap_hands src/leap_hands.cpp)
+ 
+target_link_libraries(leap_hands
   ${catkin_LIBRARIES} /home/ohara/LeapDeveloperKit_2.1.4+22333_linux/LeapSDK/lib/x64/libLeap.so
   )
