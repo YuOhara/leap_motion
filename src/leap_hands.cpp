@@ -116,7 +116,8 @@ void SampleListener::onExit(const Controller& controller) {
 
 void SampleListener::onFrame(const Controller& controller) {
   // Get the most recent frame and report some basic information
-  const Frame frame = controller.frame(); 
+  const Frame frame = controller.frame();
+  //ROS_INFO("flags = %i", (int) controller.policyFlags());
   visualization_msgs::Marker marker_msg, joint_msg;
   visualization_msgs::MarkerArray marker_array_msg;
   marker_msg.header.frame_id=joint_msg.header.frame_id="/leap_optical_frame";
@@ -205,9 +206,8 @@ int main(int argc, char** argv) {
   
   // Have the sample listener receive events from the controller
   controller.addListener(listener);
-  
-  // if (argc > 1 && strcmp(argv[1], "--bg") == 0)
-  //   controller.setPolicyFlags(Leap::Controller::POLICY_BACKGROUND_FRAMES);
+
+  controller.setPolicyFlags(static_cast<Leap::Controller::PolicyFlag> (Leap::Controller::POLICY_IMAGES));
   ros::spin();
   // Remove the sample listener when done
   controller.removeListener(listener);

@@ -187,8 +187,7 @@ int main(int argc, char** argv) {
   // Have the sample listener receive events from the controller
   controller.addListener(listener);
   
-  controller.setPolicyFlags(static_cast<Leap::Controller::PolicyFlag> (Leap::Controller::POLICY_IMAGES  | Leap::Controller::POLICY_OPTIMIZE_HMD
-								       | controller.policyFlags()					       ));
+  controller.setPolicyFlags(static_cast<Leap::Controller::PolicyFlag> (Leap::Controller::POLICY_IMAGES));
   ros::spin();
   // Remove the sample listener when done
   controller.removeListener(listener);
