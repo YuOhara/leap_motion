@@ -33,7 +33,7 @@ catkin_package(
 
 include_directories(include
   ${catkin_INCLUDE_DIRS}
-  /home/ohara/LeapDeveloperKit_2.1.4+22333_linux/LeapSDK/include
+  $ENV{LEAP_SDK_PATH}/include
 )
 
 install(PROGRAMS
@@ -44,7 +44,7 @@ install(PROGRAMS
 add_executable(leap_camera src/leap_camera.cpp src/camera_info_manager.cpp)
  
 target_link_libraries(leap_camera
-  ${catkin_LIBRARIES} /home/ohara/LeapDeveloperKit_2.1.4+22333_linux/LeapSDK/lib/x64/libLeap.so
+  ${catkin_LIBRARIES} $ENV{LEAP_SDK_PATH}/lib/x64/libLeap.so
   )
 
 add_executable(leap_hands src/leap_hands.cpp)
