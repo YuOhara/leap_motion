@@ -13,6 +13,7 @@
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "leap_motion/camera_info_manager.h"
+#include <boost/shared_ptr.hpp>
 #include <sstream>
 
 #define targetWidth 500
@@ -25,9 +26,14 @@
 using namespace Leap;
 using namespace std;
 
+
+
 class SampleListener : public Listener {
   public:
-  ros::NodeHandle _node;
+  //ros::NodeHandle _node;
+  boost::shared_ptr <ros::NodeHandle> _left_node;
+  boost::shared_ptr <ros::NodeHandle> _right_node;
+  
   ros::Publisher _pub_image_left;
   ros::Publisher _pub_info_left;
   ros::Publisher _pub_image_right;
@@ -48,21 +54,21 @@ class SampleListener : public Listener {
   private:
 };
 
-void SampleListener::onInit(const Controller& controller) {
+
+void SampleListener::onInit(const Controller& controller){
+  //_left_node.resolveName("left", true);
+  //_right_node.resolveName("right", true);
+  _left_node = boost::make_shared<ros::NodeHandle>("left");
+  _right_node = boost::make_shared<ros::NodeHandle>("right");
   std::cout << "Initialized" << std::endl;
-  _pub_image_left = _node.advertise<sensor_msgs::Image>("left/image_raw", 1);
-  _pub_info_left = _node.advertise<sensor_msgs::CameraInfo>("left/camera_info", 1);
-  _pub_image_right = _node.advertise<sensor_msgs::Image>("right/image_raw", 1);
-  _pub_info_right = _node.advertise<sensor_msgs::CameraInfo>("right/camera_info", 1);
+  _pub_image_left = _left_node->advertise<sensor_msgs::Image>("image_raw", 1);
+  _pub_info_left = _left_node->advertise<sensor_msgs::CameraInfo>("camera_info", 1);
+  _pub_image_right = _right_node->advertise<sensor_msgs::Image>("image_raw", 1);
+  _pub_info_right = _right_node->advertise<sensor_msgs::CameraInfo>("camera_info", 1);
   seq = 0;// camera_num=0;
   // float D[5] = {0, 0, 0, 0, 0};
-  info_mgr_left = new camera_info_manager::CameraInfoManager(_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_left.yml", "left/set_camera_info");
-  info_mgr_right = new camera_info_manager::CameraInfoManager(_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_right.yml", "right/set_camera_info");
-  // info_msg_right.distortion_model = "plumb_bob";
-  // info_msg_right.D.resize(5);
-  // info_msg_right.D.assign(D, D+5);
-  // info_msg_right.K[0]=108.1, info_msg_right.K[1]=0, info_msg_right.K[2]=326.0, info_msg_right.K[3]=0, info_msg_right.K[4]=108.1, info_msg_right.K[5]=229.1, info_msg_right.K[6]=0, info_msg_right.K[7]=0, info_msg_right.K[8]=1;
-  // info_msg_right.R[0]=0.99902, info_msg_right.R[1]=0.00405, info_msg_right.R[2]=-20.05, info_msg_right.R[3]=-0.0015, info_msg_right.R[4]=0.99837, info_msg_right.R[5]=-0.057, info_msg_right.R[6]=-0.044, info_msg_right.R[7]=0.0569, info_msg_right.R[8]=0.9974;
+  info_mgr_left = new camera_info_manager::CameraInfoManager(*_left_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_right.yml");
+  info_mgr_right = new camera_info_manager::CameraInfoManager(*_right_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_left.yml");
 }
 
 void SampleListener::onConnect(const Controller& controller) {
