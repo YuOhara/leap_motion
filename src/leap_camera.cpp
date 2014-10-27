@@ -12,9 +12,12 @@
 #include "ros/ros.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/CameraInfo.h"
-#include "leap_motion/camera_info_manager.h"
+#include "camera_info_manager/camera_info_manager.h"
+#include "rospack/rospack.h"
+
 #include <boost/shared_ptr.hpp>
 #include <sstream>
+
 
 #define targetWidth 500
 #define targetHeight 500
@@ -28,7 +31,7 @@ using namespace std;
 
 
 
-class SampleListener : public Listener {
+class CameraListener : public Listener {
   public:
   //ros::NodeHandle _node;
   boost::shared_ptr <ros::NodeHandle> _left_node;
@@ -55,9 +58,8 @@ class SampleListener : public Listener {
 };
 
 
-void SampleListener::onInit(const Controller& controller){
-  //_left_node.resolveName("left", true);
-  //_right_node.resolveName("right", true);
+void CameraListener::onInit(const Controller& controller){
+
   _left_node = boost::make_shared<ros::NodeHandle>("left");
   _right_node = boost::make_shared<ros::NodeHandle>("right");
   std::cout << "Initialized" << std::endl;
@@ -65,13 +67,34 @@ void SampleListener::onInit(const Controller& controller){
   _pub_info_left = _left_node->advertise<sensor_msgs::CameraInfo>("camera_info", 1);
   _pub_image_right = _right_node->advertise<sensor_msgs::Image>("image_raw", 1);
   _pub_info_right = _right_node->advertise<sensor_msgs::CameraInfo>("camera_info", 1);
-  seq = 0;// camera_num=0;
-  // float D[5] = {0, 0, 0, 0, 0};
-  info_mgr_left = new camera_info_manager::CameraInfoManager(*_left_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_right.yml");
-  info_mgr_right = new camera_info_manager::CameraInfoManager(*_right_node, "leap_motion", "file:///home/ohara/ros/hydro/src/leap_motion/camera_info/leap_cal_left.yml");
+  seq = 0;
+  std::string default_l_info_filename;
+  std::string default_r_info_filename;
+  rospack::Rospack rp;
+  std::vector<std::string> search_path;
+  rp.getSearchPathFromEnv(search_path);
+  rp.crawl(search_path, 1);
+  std::string path;
+  if (rp.find("leap_motion",path)==true) {
+    default_l_info_filename = path + std::string("/camera_info/leap_cal_left.yml");
+    default_r_info_filename = path + std::string("/camera_info/leap_cal_right.yml");
+  }
+  else {
+    default_l_info_filename = "";
+    default_r_info_filename = "";
+  }
+  ros::NodeHandle local_nh("~");
+  std::string l_info_filename;
+  std::string r_info_filename;
+  local_nh.param("template_filename_left", l_info_filename, default_l_info_filename);
+  local_nh.param("template_filename_right", r_info_filename, default_r_info_filename);
+  l_info_filename = std::string("file://") + l_info_filename;
+  r_info_filename = std::string("file://") + r_info_filename;
+  info_mgr_left = new camera_info_manager::CameraInfoManager(*_left_node, "left", l_info_filename);
+  info_mgr_right = new camera_info_manager::CameraInfoManager(*_right_node, "right", r_info_filename);
 }
 
-void SampleListener::onConnect(const Controller& controller) {
+void CameraListener::onConnect(const Controller& controller) {
   std::cout << "Connected" << std::endl;
   controller.enableGesture(Gesture::TYPE_CIRCLE);
   controller.enableGesture(Gesture::TYPE_KEY_TAP);
@@ -79,16 +102,16 @@ void SampleListener::onConnect(const Controller& controller) {
   controller.enableGesture(Gesture::TYPE_SWIPE);
 }
 
-void SampleListener::onDisconnect(const Controller& controller) {
+void CameraListener::onDisconnect(const Controller& controller) {
   // Note: not dispatched when running in a debugger.
   std::cout << "Disconnected" << std::endl;
 }
 
-void SampleListener::onExit(const Controller& controller) {
+void CameraListener::onExit(const Controller& controller) {
   std::cout << "Exited" << std::endl;
 }
 
-void SampleListener::onFrame(const Controller& controller) {
+void CameraListener::onFrame(const Controller& controller) {
   // Get the most recent frame and report some basic information
   const Frame frame = controller.frame();  
   ImageList images = frame.images();
@@ -156,15 +179,15 @@ void SampleListener::onFrame(const Controller& controller) {
   //end for test
 }
 
-void SampleListener::onFocusGained(const Controller& controller) {
+void CameraListener::onFocusGained(const Controller& controller) {
   std::cout << "Focus Gained" << std::endl;
 }
 
-void SampleListener::onFocusLost(const Controller& controller) {
+void CameraListener::onFocusLost(const Controller& controller) {
   std::cout << "Focus Lost" << std::endl;
 }
 
-void SampleListener::onDeviceChange(const Controller& controller) {
+void CameraListener::onDeviceChange(const Controller& controller) {
   std::cout << "Device Changed" << std::endl;
   const DeviceList devices = controller.devices();
 
@@ -174,18 +197,18 @@ void SampleListener::onDeviceChange(const Controller& controller) {
   }
 }
 
-void SampleListener::onServiceConnect(const Controller& controller) {
+void CameraListener::onServiceConnect(const Controller& controller) {
   std::cout << "Service Connected" << std::endl;
 }
 
-void SampleListener::onServiceDisconnect(const Controller& controller) {
+void CameraListener::onServiceDisconnect(const Controller& controller) {
   std::cout << "Service Disconnected" << std::endl;
 }
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "leap_sender");
   // Create a sample listener and controller
-  SampleListener listener;
+  CameraListener listener;
   Controller controller;
 
   

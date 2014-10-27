@@ -19,59 +19,7 @@
 using namespace Leap;
 using namespace std;
 
-bool transformRotMatToQuaternion(
-				 float &qx, float &qy, float &qz, float &qw,
-				 float m11, float m12, float m13,
-				 float m21, float m22, float m23,
-				 float m31, float m32, float m33
-				 ) {
-  // 最大成分を検索
-  float elem[ 4 ]; // 0:x, 1:y, 2:z, 3:w
-  elem[ 0 ] = m11 - m22 - m33 + 1.0f;
-  elem[ 1 ] = -m11 + m22 - m33 + 1.0f;
-  elem[ 2 ] = -m11 - m22 + m33 + 1.0f;
-  elem[ 3 ] = m11 + m22 + m33 + 1.0f;
-
-  unsigned biggestIndex = 0;
-  for ( int i = 1; i < 4; i++ ) {
-    if ( elem[i] > elem[biggestIndex] )
-      biggestIndex = i;
-  }
-
-  if ( elem[biggestIndex] < 0.0f )
-    return false;
-
-  float *q[4] = {&qx, &qy, &qz, &qw};
-  float v = sqrtf( elem[biggestIndex] ) * 0.5f;
-  *q[biggestIndex] = v;
-  float mult = 0.25f / v;
-
-  switch ( biggestIndex ) {
-  case 0: // x
-    *q[1] = (m12 + m21) * mult;
-    *q[2] = (m31 + m13) * mult;
-    *q[3] = (m23 - m32) * mult;
-    break;
-  case 1: // y
-    *q[0] = (m12 + m21) * mult;
-    *q[2] = (m23 + m32) * mult;
-    *q[3] = (m31 - m13) * mult;
-    break;
-  case 2: // z
-    *q[0] = (m31 + m13) * mult;
-    *q[1] = (m23 + m32) * mult;
-    *q[3] = (m12 - m21) * mult;
-    break;
-  case 3: // w
-    *q[0] = (m23 - m32) * mult;
-    *q[1] = (m31 - m13) * mult;
-    *q[2] = (m12 - m21) * mult;
-    break;
-  }
-  return true;
-}
-
-class SampleListener : public Listener {
+class HandsListener : public Listener {
   public:
   ros::NodeHandle _node;
   ros::Publisher _pub_marker_array;
@@ -90,14 +38,14 @@ class SampleListener : public Listener {
   private:
 };
 
-void SampleListener::onInit(const Controller& controller) {
+void HandsListener::onInit(const Controller& controller) {
   std::cout << "Initialized" << std::endl;
   _pub_marker_array = _node.advertise<visualization_msgs::MarkerArray>("hands", 1);
   _pub_bone_only = _node.advertise<visualization_msgs::Marker>("hands_line", 1);
 }
 
 
-void SampleListener::onConnect(const Controller& controller) {
+void HandsListener::onConnect(const Controller& controller) {
   std::cout << "Connected" << std::endl;
   controller.enableGesture(Gesture::TYPE_CIRCLE);
   controller.enableGesture(Gesture::TYPE_KEY_TAP);
@@ -105,16 +53,16 @@ void SampleListener::onConnect(const Controller& controller) {
   controller.enableGesture(Gesture::TYPE_SWIPE);
 }
 
-void SampleListener::onDisconnect(const Controller& controller) {
+void HandsListener::onDisconnect(const Controller& controller) {
   // Note: not dispatched when running in a debugger.
   std::cout << "Disconnected" << std::endl;
 }
 
-void SampleListener::onExit(const Controller& controller) {
+void HandsListener::onExit(const Controller& controller) {
   std::cout << "Exited" << std::endl;
 }
 
-void SampleListener::onFrame(const Controller& controller) {
+void HandsListener::onFrame(const Controller& controller) {
   // Get the most recent frame and report some basic information
   const Frame frame = controller.frame();
   //ROS_INFO("flags = %i", (int) controller.policyFlags());
@@ -172,15 +120,15 @@ void SampleListener::onFrame(const Controller& controller) {
   _pub_bone_only.publish(marker_msg);
 }
 
-void SampleListener::onFocusGained(const Controller& controller) {
+void HandsListener::onFocusGained(const Controller& controller) {
   std::cout << "Focus Gained" << std::endl;
 }
 
-void SampleListener::onFocusLost(const Controller& controller) {
+void HandsListener::onFocusLost(const Controller& controller) {
   std::cout << "Focus Lost" << std::endl;
 }
 
-void SampleListener::onDeviceChange(const Controller& controller) {
+void HandsListener::onDeviceChange(const Controller& controller) {
   std::cout << "Device Changed" << std::endl;
   const DeviceList devices = controller.devices();
 
@@ -190,18 +138,18 @@ void SampleListener::onDeviceChange(const Controller& controller) {
   }
 }
 
-void SampleListener::onServiceConnect(const Controller& controller) {
+void HandsListener::onServiceConnect(const Controller& controller) {
   std::cout << "Service Connected" << std::endl;
 }
 
-void SampleListener::onServiceDisconnect(const Controller& controller) {
+void HandsListener::onServiceDisconnect(const Controller& controller) {
   std::cout << "Service Disconnected" << std::endl;
 }
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "leap_sender");
   // Create a sample listener and controller
-  SampleListener listener;
+  HandsListener listener;
   Controller controller;
   
   // Have the sample listener receive events from the controller
